@@ -5,7 +5,7 @@ LABEL maintainer "whiteleaf <2nd.leaf@gmail.com>"
 ENV NAROU_VERSION 3.5.1
 ENV AOZORAEPUB3_VERSION 1.1.0b55Q
 ENV AOZORAEPUB3_FILE AozoraEpub3-${AOZORAEPUB3_VERSION}
-ENV KINDLEGEN_FILE kindlegen_linux_2.6_i386_v2_9.tar.gz
+ENV KINDLEGEN_FILE kindlegen
 
 WORKDIR /temp
 
@@ -17,20 +17,21 @@ RUN set -x \
  # install openjdk11
  && apk --no-cache add openjdk11 --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community \
  # install kindlegen
- && wget http://kindlegen.s3.amazonaws.com/${KINDLEGEN_FILE} \
- && tar -xzf ${KINDLEGEN_FILE} \
+ && wget https://archive.org/download/kindlegen/${KINDLEGEN_FILE} \
  && mv kindlegen /aozoraepub3 \
  # install Narou.rb
  && apk --update --no-cache --virtual .build-deps add \
-      build-base \
-      make \
-      gcc \
- && gem install narou -v ${NAROU_VERSION} --no-document \
- && apk del --purge .build-deps \
+      build-base make gcc git
+
+ADD ./narou /src
+
+RUN cd /src && gem build narou.gemspec && gem install narou*.gem --no-document \
+ && apk del --purge .build-deps && cd /temp \
  # setting AozoraEpub3
  && mkdir .narousetting \
  && narou init -p /aozoraepub3 -l 1.8 \
- && rm -rf /temp
+ && rm -rf /temp \
+ && rm -rf /src
 
 WORKDIR /novel
 
